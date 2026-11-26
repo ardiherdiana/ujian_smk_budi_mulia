@@ -1,5 +1,5 @@
 import * as React from "react"
-import { router } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import { Pencil, Trash2 } from "lucide-react"
 
 import type { Paginasi, Role } from "@/lib/classroom/types"
@@ -134,6 +134,7 @@ export function GuruPage({ guru, filter }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      <Head title="Data Guru" />
       {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

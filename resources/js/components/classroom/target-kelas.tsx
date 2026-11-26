@@ -78,7 +78,7 @@ export function TargetKelas({ tujuan, asalId, value, onChange }: Props) {
             <Button type="button" variant="outline" size="sm" onClick={pilihSemuaTampil} disabled={tampil.length === 0}>
               Pilih semua yang tampil ({tampil.length})
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => onChange([asalId])}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => onChange([asalId])} disabled={value.length <= 1}>
               Kosongkan
             </Button>
           </div>

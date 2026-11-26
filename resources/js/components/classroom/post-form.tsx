@@ -77,14 +77,51 @@ export function bentukPayload(form: PostFormState): Record<string, unknown> {
   }
 }
 
+/** Galat server yang ikut hilang saat isian ini diubah (kunci galat berkas/tautan bisa bernomor, mis. `berkas.0`). */
+const GALAT_KOLOM: Partial<Record<keyof PostFormState, string[]>> = {
+  judul: ["judul"],
+  isi: ["isi"],
+  durasiMenit: ["durasiMenit"],
+  mulaiAt: ["mulaiAt", "selesaiAt"],
+  selesaiAt: ["selesaiAt"],
+  lampiran: ["berkas", "tautan"],
+}
+
+/**
+ * Galat setelah isian berubah dari `lama` ke `baru`: pesan kolom yang diubah dibuang, kecuali jadwal yang masih
+ * salah (ditutup tidak setelah dibuka) supaya pesannya baru hilang saat tanggalnya benar.
+ */
+function galatSetelahUbah(errors: Record<string, string>, lama: PostFormState, baru: PostFormState): Record<string, string> {
+  const buang = (Object.keys(GALAT_KOLOM) as (keyof PostFormState)[])
+    .filter((k) => lama[k] !== baru[k])
+    .flatMap((k) => GALAT_KOLOM[k] ?? [])
+  if (buang.length === 0) return errors
+
+  // Nilai datetime-local (YYYY-MM-DDTHH:mm) bisa dibandingkan sebagai teks.
+  const jadwalSalah = baru.mulaiAt !== "" && baru.selesaiAt !== "" && baru.selesaiAt <= baru.mulaiAt
+  return Object.fromEntries(
+    Object.entries(errors).filter(([kunci]) => {
+      const kolom = kunci.split(".")[0]
+      return !buang.includes(kolom) || (kolom === "selesaiAt" && jadwalSalah)
+    })
+  )
+}
+
 interface PostFormFieldsProps {
   form: PostFormState
   onChange: (form: PostFormState) => void
   errors: Record<string, string>
+  /** Dipanggil dengan galat yang sudah dibersihkan dari kolom yang baru diubah. */
+  onErrorsChange: (errors: Record<string, string>) => void
 }
 
-export function PostFormFields({ form, onChange, errors }: PostFormFieldsProps) {
-  const set = <K extends keyof PostFormState>(key: K, value: PostFormState[K]) => onChange({ ...form, [key]: value })
+export function PostFormFields({ form, onChange, errors, onErrorsChange }: PostFormFieldsProps) {
+  const set = <K extends keyof PostFormState>(key: K, value: PostFormState[K]) => {
+    const baru = { ...form, [key]: value }
+    const galat = galatSetelahUbah(errors, form, baru)
+    if (galat !== errors) onErrorsChange(galat)
+    onChange(baru)
+  }
 
   return (
     <FieldGroup>

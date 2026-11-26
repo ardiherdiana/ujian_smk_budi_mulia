@@ -1,4 +1,4 @@
-import { Link, router } from "@inertiajs/react"
+import { Head, Link, router } from "@inertiajs/react"
 import {
   addMonths,
   eachDayOfInterval,
@@ -60,6 +60,7 @@ export function KalenderPage({ bulan, items }: Props) {
 
   return (
     <div className="flex w-full flex-col gap-4">
+      <Head title="Kalender" />
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Kalender</h1>

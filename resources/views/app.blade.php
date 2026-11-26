@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0e57a6" />
     <meta name="robots" content="noindex, nofollow" />
 
+    <title inertia>{{ config('app.name') }}</title>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
 

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link, router } from "@inertiajs/react"
+import { Head, Link, router } from "@inertiajs/react"
 import { BookOpen, Users } from "lucide-react"
 import { toast } from "sonner"
 
@@ -72,6 +72,7 @@ export function DaftarKelasPage({ kelas, arsip, tahunAjaran, bisaMembuat, opsi }
 
   return (
     <div className="flex flex-col gap-6">
+      <Head title={arsip ? "Ruang Kelas Diarsipkan" : "Ruang Kelas"} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">{arsip ? "Ruang Kelas Diarsipkan" : "Ruang Kelas"}</h1>

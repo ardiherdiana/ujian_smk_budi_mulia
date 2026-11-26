@@ -107,8 +107,11 @@ class KelasAksesTest extends TestCase
         $kelas = $this->kelas($guru, $rombel);
         $siswa = $this->siswa($rombel, 'siswa01');
         $ujian = $this->buatPost($kelas, $guru, 'UJIAN', ['durasiMenit' => 30, 'selesaiAt' => now()->addDay()]);
+        $this->soalPg($ujian);
         // Ujian yang sudah ditutup tidak dihitung lagi untuk siswa.
-        $this->buatPost($kelas, $guru, 'UJIAN', ['durasiMenit' => 30, 'selesaiAt' => now()->subDay()]);
+        $this->soalPg($this->buatPost($kelas, $guru, 'UJIAN', ['durasiMenit' => 30, 'selesaiAt' => now()->subDay()]));
+        // Ujian yang belum punya soal belum bisa dikerjakan, jadi juga tidak dihitung (S-01).
+        $this->buatPost($kelas, $guru, 'UJIAN', ['durasiMenit' => 30, 'mulaiAt' => now()->addDay()]);
 
         $this->actingAs($siswa)->get('/kelas')->assertInertia(fn (Assert $page) => $page->where('kelas.0.penanda', 1));
 

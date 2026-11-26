@@ -11,6 +11,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -63,6 +65,31 @@ return Application::configure(basePath: dirname(__DIR__))
             $status = $e->getStatusCode();
             if ($request->header('X-Inertia') && $request->method() !== 'GET' && $status >= 400 && $status < 500) {
                 return back()->withErrors(['message' => $e->getMessage() ?: 'Permintaan ditolak']);
+            }
+        });
+
+        // Membuka halaman yang ditolak/tidak ada menampilkan halaman error bergaya aplikasi (dengan jalan kembali ke
+        // Beranda), bukan teks polos. Hanya untuk kunjungan GET halaman: JSON dan kiriman formulir Inertia sudah
+        // ditangani di atas. 500/503 hanya saat debug mati supaya jejak error tetap terlihat saat pengembangan.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            $status = $response->getStatusCode();
+            $tampil = in_array($status, [403, 404], true) || (in_array($status, [500, 503], true) && ! config('app.debug'));
+
+            if (! $tampil || ! $request->isMethod('GET') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
+                return $response;
+            }
+
+            // Pesan 403 berasal dari abort() di aplikasi (mis. "Anda tidak memiliki akses ke ruang kelas ini"). Pesan 404
+            // bisa memuat nama model atau rute, dan pesan 500 tidak pernah boleh tampil, jadi keduanya memakai teks bawaan.
+            $pesan = $status === 403 && $e instanceof HttpException ? $e->getMessage() : '';
+
+            try {
+                return Inertia::render('error-page', ['status' => $status, 'pesan' => $pesan !== '' ? $pesan : null])
+                    ->toResponse($request)
+                    ->setStatusCode($status);
+            } catch (Throwable) {
+                // Halaman error sendiri gagal dirender (mis. aset build sedang diganti saat deploy): pakai respons asli.
+                return $response;
             }
         });
     })->create();

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { router } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import { Pencil, Trash2 } from "lucide-react"
 
 import type { Paginasi } from "@/lib/classroom/types"
@@ -143,6 +143,7 @@ export function SiswaPage({ siswa, rombel, filter }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      <Head title="Siswa" />
       {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

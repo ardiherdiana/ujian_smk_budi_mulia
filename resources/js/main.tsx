@@ -10,7 +10,10 @@ import { ClassroomLayout } from "@/layouts/classroom-layout"
 import type { FlashToast } from "@/lib/types"
 
 // Halaman full-bleed (tanpa sidebar). Halaman lain memakai ClassroomLayout (sidebar ujian), sama seperti Classroom.
-const BARE_PAGES = new Set(["login-page", "profil-page", "classroom/ujian/kerjakan-page"])
+// Halaman error juga tanpa sidebar: 404 untuk alamat yang tidak dikenal dirender tanpa data sesi dan menu.
+const BARE_PAGES = new Set(["login-page", "profil-page", "error-page", "classroom/ujian/kerjakan-page"])
+
+const NAMA_APLIKASI = "Ujian SMK Budi Mulia"
 
 window.addEventListener("pageshow", (event) => {
   if (event.persisted) {
@@ -27,12 +30,21 @@ router.on("success", (event) => {
   show(message.message)
 })
 
+// Penolakan dari server untuk kiriman formulir (403/409 dari abort(), lihat bootstrap/app.php) tiba sebagai
+// `errors.message`. Formulir hanya menampilkan galat per kolom, jadi pesan umum ini ditampilkan di sini.
+router.on("error", (event) => {
+  const pesan = (event.detail.errors as Record<string, string | undefined>).message
+  if (pesan) toast.error(pesan)
+})
+
 type PageModule = Record<string, React.ComponentType>
 
 // Semua halaman dimuat lazy per halaman.
 const pages = import.meta.glob("./pages/**/*.tsx") as Record<string, () => Promise<PageModule>>
 
 createInertiaApp({
+  // `<Head title="Daftar ujian" />` menjadi "Daftar ujian - Ujian SMK Budi Mulia" di tab peramban.
+  title: (judul) => (judul ? `${judul} - ${NAMA_APLIKASI}` : NAMA_APLIKASI),
   resolve: async (name) => {
     const page = await pages[`./pages/${name}.tsx`]?.()
     if (!page) throw new Error(`Page not found: ${name}`)

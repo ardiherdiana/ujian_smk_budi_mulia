@@ -1,3 +1,4 @@
+import { Head } from "@inertiajs/react"
 import { Download } from "lucide-react"
 
 import type { KelasHeader as KelasHeaderData } from "@/lib/classroom/types"
@@ -45,6 +46,7 @@ function badgeRata(rata: number | null) {
 export function NilaiPage({ kelas, kolom, baris, saya }: Props) {
   return (
     <div className="flex flex-col gap-4">
+      <Head title={`${saya ? "Nilai Saya" : "Rekap Nilai"} · ${kelas.mapel} · ${kelas.rombel}`} />
       <KelasHeader kelas={kelas} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">

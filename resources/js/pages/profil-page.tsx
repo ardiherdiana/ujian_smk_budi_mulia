@@ -201,7 +201,7 @@ export function ProfilPage() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <Head title="Profil - Ujian SMK Budi Mulia" />
+      <Head title="Profil" />
       <HeaderMandiri judul="Profil" />
 
       {/* Satu kolom ke bawah: data akun dulu, lalu ganti password. */}

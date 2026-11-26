@@ -50,7 +50,7 @@ export function LoginPage() {
 
   return (
     <div className="relative flex min-h-svh w-full">
-      <Head title="Masuk - Ujian SMK Budi Mulia" />
+      <Head title="Masuk" />
       <div className="relative hidden w-1/2 lg:block">
         <BackgroundSlideshow />
         <div className="relative z-10 flex h-full flex-col justify-end p-10 text-white">

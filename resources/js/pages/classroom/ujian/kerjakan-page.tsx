@@ -1,5 +1,5 @@
 import * as React from "react"
-import { router } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import { ArrowLeft, ArrowRight, CircleCheck, Flag, LayoutGrid, Loader2, TriangleAlert } from "lucide-react"
 import { toast } from "sonner"
 
@@ -203,6 +203,7 @@ export function KerjakanUjianPage({ post, kelas, totalPoin, percobaanId, sisaDet
 
   return (
     <div className="flex min-h-svh flex-col bg-muted/30">
+      <Head title={post.judul ?? "Ujian"} />
       {confirmDialog}
       <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2">

@@ -24,7 +24,8 @@ interface Props {
 
 export function PostEditDialog({ post, buka, onBukaChange }: Props) {
   return (
-    <Dialog open={buka} onOpenChange={onBukaChange}>
+    // Klik di luar dialog tidak menutupnya, supaya isian tidak hilang karena klik meleset.
+    <Dialog open={buka} onOpenChange={onBukaChange} disablePointerDismissal>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl">
         {/* Dipasang ulang tiap dialog dibuka, jadi formulir selalu mulai dari isi post terbaru. */}
         {buka && <PostEditForm post={post} onSelesai={() => onBukaChange(false)} />}
@@ -70,7 +71,7 @@ function PostEditForm({ post, onSelesai }: { post: Post; onSelesai: () => void }
             <DialogDescription>Perubahan langsung terlihat oleh siswa.</DialogDescription>
           </DialogHeader>
 
-          <PostFormFields form={form} onChange={setForm} errors={errors} />
+          <PostFormFields form={form} onChange={setForm} errors={errors} onErrorsChange={setErrors} />
 
           {lampiranAda.length > 0 && (
             <Field>

@@ -167,6 +167,8 @@ export interface KelasSaya {
   id: string
   mapel: string
   rombel: string
+  /** Guru pengajar: pembeda ruang kelas bernama sama (satu mapel di satu rombel bisa diajar beberapa guru). */
+  guru: string
 }
 
 /** Tugas/ujian lintas ruang kelas untuk Daftar tugas dan Kalender. */

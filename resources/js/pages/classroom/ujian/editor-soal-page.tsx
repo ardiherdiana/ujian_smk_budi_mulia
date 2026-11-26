@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link, router } from "@inertiajs/react"
+import { Head, Link, router } from "@inertiajs/react"
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, Lock, Plus, Trash2, X } from "lucide-react"
 
 import type { ItemGambar, Soal } from "@/lib/classroom/types"
@@ -14,6 +14,7 @@ import {
 } from "@/lib/classroom/soal"
 import { formatAngka } from "@/lib/classroom/format"
 import { cn } from "@/lib/classroom/utils"
+import { useCegahTinggalkan } from "@/hooks/use-cegah-tinggalkan"
 import { useConfirm } from "@/hooks/use-confirm"
 import { ImporSoal, type DrafSoal, type HasilImpor } from "@/components/classroom/ujian/impor-soal"
 import { GambarPilihanEditor, GambarSoalEditor } from "@/components/classroom/ujian/unggah-gambar"
@@ -178,6 +179,47 @@ function semuaPayload(list: FormSoal[], bagiRata: boolean) {
 
 const snapshot = (list: FormSoal[], bagiRata: boolean) => JSON.stringify({ bagiRata, soal: semuaPayload(list, bagiRata) })
 
+type Galat = Record<string, string>
+
+/** Kolom galat server yang hilang saat bagian kartu diubah. Pilihan, kunci, dan gambar pilihan berbagi satu pesan. */
+const GALAT_TERKAIT: Partial<Record<keyof FormSoal, string[]>> = {
+  teks: ["teks"],
+  gambar: ["gambar"],
+  poin: ["poin"],
+  tipe: ["opsi", "kunci", "opsiGambar"],
+  opsi: ["opsi", "kunci", "opsiGambar"],
+  opsiGambar: ["opsi", "kunci", "opsiGambar"],
+  kunci: ["opsi", "kunci", "opsiGambar"],
+}
+
+/**
+ * Galat per soal berkunci `soal.{nomor}.{kolom}`. Saat kartu dipindah, digandakan, atau dihapus, nomornya dipetakan
+ * ulang lewat `peta` (null = buang) supaya pesan tetap menempel di kartu yang benar.
+ */
+function petakanGalat(errors: Galat, peta: (nomor: number, kolom: string) => number | null): Galat {
+  if (Object.keys(errors).length === 0) return errors
+  const hasil: Galat = {}
+  for (const [kunci, pesan] of Object.entries(errors)) {
+    const cocok = /^soal\.(\d+)\.(.+)$/.exec(kunci)
+    if (!cocok) {
+      hasil[kunci] = pesan
+      continue
+    }
+    const nomor = peta(Number(cocok[1]), cocok[2])
+    if (nomor !== null) hasil[`soal.${nomor}.${cocok[2]}`] = pesan
+  }
+  return hasil
+}
+
+/** Buang galat kartu ke-`index` untuk kolom yang baru diubah (termasuk sub-kolom seperti `opsi.2`). */
+function tanpaGalatKolom(errors: Galat, index: number, perubahan: Partial<FormSoal>): Galat {
+  const kolom = Object.keys(perubahan).flatMap((k) => GALAT_TERKAIT[k as keyof FormSoal] ?? [])
+  if (kolom.length === 0) return errors
+  return petakanGalat(errors, (nomor, k) =>
+    nomor === index && kolom.some((c) => k === c || k.startsWith(`${c}.`)) ? null : nomor
+  )
+}
+
 export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bagiRataAwal, soal }: Props) {
   const { confirm, confirmDialog } = useConfirm()
   const [awal] = React.useState<FormSoal[]>(() => {
@@ -189,7 +231,7 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
   React.useEffect(() => {
     daftarTerbaru.current = daftar
   }, [daftar])
-  const [errors, setErrors] = React.useState<Record<string, string>>({})
+  const [errors, setErrors] = React.useState<Galat>({})
   const [memproses, setMemproses] = React.useState(false)
   const akhir = React.useRef<HTMLDivElement>(null)
 
@@ -197,13 +239,13 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
   const [snapshotAwal] = React.useState(() => snapshot(awal, bagiRataAwal))
   const berubah = snapshot(daftar, bagiRata) !== snapshotAwal && !terkunci
 
-  // Peringatan bawaan peramban bila halaman ditutup saat ada perubahan yang belum disimpan.
-  React.useEffect(() => {
-    if (!berubah) return
-    const cegah = (e: BeforeUnloadEvent) => e.preventDefault()
-    window.addEventListener("beforeunload", cegah)
-    return () => window.removeEventListener("beforeunload", cegah)
-  }, [berubah])
+  // Batal, tautan kembali, sidebar, atau menutup tab saat ada perubahan: tanya dulu. Simpan sendiri tidak ditahan.
+  const urlSimpan = `/post/${post.id}/soal`
+  const { dialog: dialogTinggalkan } = useCegahTinggalkan(berubah, {
+    abaikan: (visit) => visit.method === "put" && visit.url.pathname === urlSimpan,
+  })
+  // Ujian tanpa soal tersimpan dan kartu awalnya belum disentuh: belum ada yang bisa disebut "soal" atau "tersimpan".
+  const belumAdaSoal = soal.length === 0 && !berubah
 
   const poinRata = bagiPoin(daftar.length)
   /** Poin yang benar-benar berlaku untuk kartu ke-`index` pada mode sekarang. */
@@ -219,10 +261,12 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
   function ubahMode(rata: boolean) {
     if (!rata) setDaftar((list) => list.map((s, i) => ({ ...s, poin: String(poinRata[i] ?? s.poin) })))
     setBagiRata(rata)
+    setErrors((e) => petakanGalat(e, (nomor, kolom) => (kolom === "poin" ? null : nomor)))
   }
 
   function ubah(index: number, perubahan: Partial<FormSoal>) {
     setDaftar((list) => list.map((s, i) => (i === index ? { ...s, ...perubahan } : s)))
+    setErrors((e) => tanpaGalatKolom(e, index, perubahan))
   }
 
   function ubahTipe(index: number, tipe: TipeSoal) {
@@ -258,16 +302,18 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
       }
       return [...list.slice(0, index + 1), salinan, ...list.slice(index + 1)]
     })
+    setErrors((e) => petakanGalat(e, (nomor) => (nomor > index ? nomor + 1 : nomor)))
   }
 
   function pindah(index: number, arah: -1 | 1) {
+    const tujuan = index + arah
+    if (tujuan < 0 || tujuan >= daftar.length) return
     setDaftar((list) => {
-      const tujuan = index + arah
-      if (tujuan < 0 || tujuan >= list.length) return list
       const baru = [...list]
       ;[baru[index], baru[tujuan]] = [baru[tujuan], baru[index]]
       return baru
     })
+    setErrors((e) => petakanGalat(e, (nomor) => (nomor === index ? tujuan : nomor === tujuan ? index : nomor)))
   }
 
   async function hapus(index: number) {
@@ -277,6 +323,7 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
       if (!ok) return
     }
     setDaftar((list) => (list.length === 1 ? [kosong()] : list.filter((_, i) => i !== index)))
+    setErrors((e) => petakanGalat(e, (nomor) => (nomor === index ? null : nomor > index ? nomor - 1 : nomor)))
   }
 
   function setOpsi(index: number, o: number, nilai: string) {
@@ -316,6 +363,8 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
     const baru = hasil.soal.map(dariDraf)
     const dasar = sekarang.length === 1 && sepenuhnyaKosong(sekarang[0]) ? [] : sekarang
     setDaftar([...dasar, ...baru])
+    // Kartu awal yang kosong digantikan soal impor pertama, jadi galatnya tidak berlaku lagi.
+    if (dasar.length === 0) setErrors((e) => petakanGalat(e, () => null))
     requestAnimationFrame(() => document.getElementById(`soal-${dasar.length}`)?.scrollIntoView({ behavior: "smooth", block: "start" }))
   }
 
@@ -337,7 +386,7 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
   function simpan(event: React.FormEvent) {
     event.preventDefault()
     router.put(
-      `/post/${post.id}/soal`,
+      urlSimpan,
       { bagiRata, soal: semuaPayload(daftar, bagiRata) },
       {
         preserveScroll: true,
@@ -360,7 +409,9 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
 
   return (
     <form onSubmit={simpan} className="flex w-full flex-col gap-4 pb-4">
+      <Head title={`Soal · ${post.judul ?? "Ujian"} · ${kelas.rombel}`} />
       {confirmDialog}
+      {dialogTinggalkan}
 
       <Button type="button" variant="ghost" size="sm" className="w-fit" render={<Link href={`/post/${post.id}`} />}>
         <ArrowLeft /> {post.judul ?? "Ujian"} · {kelas.rombel}
@@ -374,7 +425,7 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
-          {daftar.length} soal · total {formatAngka(totalPoin)} poin
+          {belumAdaSoal ? "Belum ada soal tersimpan" : `${daftar.length} soal · total ${formatAngka(totalPoin)} poin`}
         </p>
       </div>
 
@@ -637,7 +688,7 @@ export function EditorSoalPage({ post, kelas, kelasLain, terkunci, bagiRata: bag
       {!terkunci && (
         <div className="sticky bottom-0 z-20 border-t bg-background py-3">
           <div className="flex w-full items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">{berubah ? "Ada perubahan yang belum disimpan" : "Semua perubahan tersimpan"}</p>
+            <p className="text-sm text-muted-foreground">{berubah ? "Ada perubahan yang belum disimpan" : belumAdaSoal ? "Belum ada soal tersimpan" : "Semua perubahan tersimpan"}</p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" render={<Link href={`/post/${post.id}`} />}>
                 Batal

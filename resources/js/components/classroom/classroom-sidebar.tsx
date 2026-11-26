@@ -78,6 +78,15 @@ export function ClassroomSidebar({ ...props }: React.ComponentProps<typeof Sideb
   const kelasSaya = pageProps.kelasSaya ?? []
   const role = user?.role ?? "SISWA"
   const lihatData = role === "ADMIN" || role === "KEPSEK"
+  // Mapel + rombel yang muncul lebih dari sekali (diajar guru berbeda) perlu nama guru supaya bisa dibedakan.
+  const kembar = new Map<string, number>()
+  for (const k of kelasSaya) kembar.set(`${k.mapel}|${k.rombel}`, (kembar.get(`${k.mapel}|${k.rombel}`) ?? 0) + 1)
+
+  /** Baris kedua kartu kelas. Siswa hanya melihat kelas rombelnya sendiri, jadi yang membedakan adalah gurunya. */
+  function keterangan(kelas: KelasSaya): string {
+    if (role === "SISWA") return kelas.guru
+    return (kembar.get(`${kelas.mapel}|${kelas.rombel}`) ?? 0) > 1 ? `${kelas.rombel} · ${kelas.guru}` : kelas.rombel
+  }
 
   function tutupMobile() {
     if (isMobile) setOpenMobile(false)
@@ -140,7 +149,7 @@ export function ClassroomSidebar({ ...props }: React.ComponentProps<typeof Sideb
                     <SidebarMenuItem key={kelas.id}>
                       <SidebarMenuButton
                         isActive={aktif}
-                        tooltip={`${kelas.mapel} · ${kelas.rombel}`}
+                        tooltip={`${kelas.mapel} · ${kelas.rombel} · ${kelas.guru}`}
                         className="h-auto py-1.5"
                         onClick={tutupMobile}
                         render={<Link href={dasar} />}
@@ -155,7 +164,9 @@ export function ClassroomSidebar({ ...props }: React.ComponentProps<typeof Sideb
                         </span>
                         <div className="flex min-w-0 flex-col leading-tight">
                           <span className="truncate text-sm">{kelas.mapel}</span>
-                          <span className="truncate text-xs text-muted-foreground">{kelas.rombel}</span>
+                          <span className="truncate text-xs text-muted-foreground" title={`${kelas.rombel} · ${kelas.guru}`}>
+                            {keterangan(kelas)}
+                          </span>
                         </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

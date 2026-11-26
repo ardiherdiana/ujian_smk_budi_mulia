@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link } from "@inertiajs/react"
+import { Head, Link } from "@inertiajs/react"
 import { ChevronDown, ClipboardCheck, FileText, ListChecks } from "lucide-react"
 
 import type { ItemAgenda } from "@/lib/classroom/types"
@@ -158,6 +158,7 @@ export function DaftarUjianPage({ items }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      <Head title="Daftar ujian" />
       <div>
         <h1 className="text-xl font-semibold">Daftar ujian</h1>
         <p className="text-sm text-muted-foreground">Ujian dari semua ruang kelas aktif</p>

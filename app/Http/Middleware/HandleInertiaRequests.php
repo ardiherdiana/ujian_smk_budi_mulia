@@ -81,18 +81,28 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    /** @return list<array{id: string, mapel: string, rombel: string}> */
+    /**
+     * Urut mapel lalu rombel tanpa membedakan huruf besar-kecil ("Bahasa Indonesia" sebelum "BK/BP"), angka secara alami
+     * ("X TKJ 2" sebelum "X TKJ 10"). `guru` membedakan ruang kelas bernama sama yang diajar guru berbeda.
+     *
+     * @return list<array{id: string, mapel: string, rombel: string, guru: string}>
+     */
     private function kelasSaya(Akun $user): array
     {
-        $query = Kelas::with(['mapel:id,nama', 'rombel:id,nama'])->where('diarsipkan', false)->untukPengguna($user);
+        $query = Kelas::with(['mapel:id,nama', 'rombel:id,nama', 'guru:id,name,username'])->where('diarsipkan', false)->untukPengguna($user);
 
         if ($aktif = TahunAjaran::aktif()) {
             $query->where('tahunAjaranId', $aktif->id);
         }
 
         return $query->get()
-            ->sortBy(fn (Kelas $k) => $k->mapel->nama.'|'.$k->rombel->nama)
-            ->map(fn (Kelas $k) => ['id' => $k->id, 'mapel' => $k->mapel->nama, 'rombel' => $k->rombel->nama])
+            ->sortBy(fn (Kelas $k) => $k->mapel->nama.'|'.$k->rombel->nama.'|'.$k->guru->namaTampil(), SORT_NATURAL | SORT_FLAG_CASE)
+            ->map(fn (Kelas $k) => [
+                'id' => $k->id,
+                'mapel' => $k->mapel->nama,
+                'rombel' => $k->rombel->nama,
+                'guru' => $k->guru->namaTampil(),
+            ])
             ->values()->all();
     }
 }

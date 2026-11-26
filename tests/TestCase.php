@@ -8,6 +8,7 @@ use App\Models\Classroom\Mapel;
 use App\Models\Classroom\Post;
 use App\Models\Classroom\Rombel;
 use App\Models\Classroom\Siswa;
+use App\Models\Classroom\Soal;
 use App\Models\Classroom\TahunAjaran;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -97,6 +98,15 @@ abstract class TestCase extends BaseTestCase
             'tipe' => $tipe,
             'judul' => "Contoh {$tipe}",
             'dibuatOleh' => $guru->id,
+        ]);
+    }
+
+    /** Satu soal pilihan ganda; ujian tanpa soal belum bisa dikerjakan dan tidak dihitung sebagai tugas siswa. */
+    protected function soalPg(Post $ujian, int $urut = 1): Soal
+    {
+        return Soal::create([
+            'postId' => $ujian->id, 'urut' => $urut, 'tipe' => 'PG', 'teks' => "Soal {$urut}", 'poin' => 10,
+            'opsi' => ['A', 'B'], 'kunci' => '0',
         ]);
     }
 

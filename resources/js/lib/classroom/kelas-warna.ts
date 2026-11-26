@@ -4,7 +4,7 @@ const WARNA = [
   "bg-sidebar-primary text-sidebar-primary-foreground",
   "bg-success text-white dark:bg-success/60",
   "bg-secondary-foreground text-secondary",
-  "bg-chart-4 text-primary-foreground",
+  "bg-chart-4 text-primary-foreground dark:bg-muted-foreground dark:text-background",
 ] as const
 
 /** Warna tetap per ruang kelas (dari id), jadi kartu dan header kelas yang sama selalu berwarna sama. */

@@ -66,7 +66,8 @@ export function PostComposer({ kelasId, tujuan }: Props) {
         </Button>
       </div>
 
-      <Dialog open={buka} onOpenChange={setBuka}>
+      {/* Klik di luar dialog tidak menutupnya, supaya isian panjang tidak hilang karena klik meleset. */}
+      <Dialog open={buka} onOpenChange={setBuka} disablePointerDismissal>
         <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl">
           <form onSubmit={kirim} className="flex flex-col gap-4">
             <DialogHeader>
@@ -78,7 +79,7 @@ export function PostComposer({ kelasId, tujuan }: Props) {
               </DialogDescription>
             </DialogHeader>
 
-            <PostFormFields form={form} onChange={setForm} errors={errors} />
+            <PostFormFields form={form} onChange={setForm} errors={errors} onErrorsChange={setErrors} />
 
             <TargetKelas tujuan={tujuan} asalId={kelasId} value={kelasTujuan} onChange={setKelasTujuan} />
             {errors.kelasTujuan && <p className="text-sm text-destructive">{errors.kelasTujuan}</p>}

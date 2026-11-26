@@ -155,7 +155,7 @@ class PostController extends Controller
 
         return redirect("/kelas/{$kelasId}")->with('toast', [
             'type' => 'success',
-            'message' => $lainnya->isNotEmpty() ? 'Postingan dihapus dari '.($lainnya->count() + 1).' ruang kelas' : 'Postingan dihapus',
+            'message' => $lainnya->isNotEmpty() ? 'Ujian dihapus dari '.($lainnya->count() + 1).' ruang kelas' : 'Ujian dihapus',
         ]);
     }
 

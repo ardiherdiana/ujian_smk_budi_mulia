@@ -1,5 +1,5 @@
 import * as React from "react"
-import { router } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import { Pencil, Trash2 } from "lucide-react"
 
 import { useAuth } from "@/context/classroom-auth"
@@ -108,6 +108,7 @@ export function RombelPage({ rombel, guru }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      <Head title="Rombel" />
       {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

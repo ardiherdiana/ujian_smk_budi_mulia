@@ -48,7 +48,10 @@ class AgendaController extends Controller
         ]);
     }
 
-    /** Ujian dari ruang kelas aktif milik pengguna (tidak diarsipkan, tahun ajaran aktif). */
+    /**
+     * Ujian dari ruang kelas aktif milik pengguna (tidak diarsipkan, tahun ajaran aktif). Siswa tidak melihat ujian yang
+     * belum punya soal: belum bisa dikerjakan, jadi bukan tugas "Ditugaskan" (guru tetap melihatnya).
+     */
     private function postsAgenda(Akun $user): Builder
     {
         $kelas = Kelas::untukPengguna($user)->where('diarsipkan', false);
@@ -58,7 +61,8 @@ class AgendaController extends Controller
 
         return Post::with(['kelas:id,mapelId,rombelId', 'kelas.mapel:id,nama', 'kelas.rombel:id,nama'])
             ->where('tipe', 'UJIAN')
-            ->whereIn('kelasId', $kelas->select('kelas.id'));
+            ->whereIn('kelasId', $kelas->select('kelas.id'))
+            ->when($user->isSiswa(), fn (Builder $q) => $q->whereHas('soal'));
     }
 
     /**

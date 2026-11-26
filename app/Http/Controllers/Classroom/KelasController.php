@@ -46,15 +46,19 @@ class KelasController extends Controller
 
         $bisaMembuat = in_array($user->role, ['ADMIN', 'GURU'], true);
 
-        $daftar = $query->orderBy('rombelId')->get()->sortBy(fn (Kelas $k) => $k->rombel->nama.'|'.$k->mapel->nama)->values();
+        // Tanpa membedakan huruf besar-kecil dan angka secara alami, sama dengan urutan sidebar.
+        $daftar = $query->orderBy('rombelId')->get()
+            ->sortBy(fn (Kelas $k) => $k->rombel->nama.'|'.$k->mapel->nama.'|'.$k->guru->namaTampil(), SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
         $ids = $daftar->pluck('id')->all();
 
         // Penanda di kartu: ujian yang masih bisa dikerjakan tapi belum diselesaikan (siswa), atau hasil yang menunggu
-        // koreksi essay (guru, admin, kepsek).
+        // koreksi essay (guru, admin, kepsek). Ujian yang belum punya soal belum bisa dikerjakan, jadi tidak dihitung.
         $penanda = collect();
         if ($ids && $user->isSiswa() && $user->siswa) {
             $penanda = Post::selectRaw('kelasId, count(*) as total')
                 ->whereIn('kelasId', $ids)->where('tipe', 'UJIAN')
+                ->whereHas('soal')
                 ->where(fn ($q) => $q->whereNull('selesaiAt')->orWhere('selesaiAt', '>=', now()))
                 ->whereDoesntHave('percobaan', fn ($q) => $q->where('siswaId', $user->siswa->id)->where('status', '!=', 'BERJALAN'))
                 ->groupBy('kelasId')->pluck('total', 'kelasId');
@@ -217,7 +221,8 @@ class KelasController extends Controller
 
             return Inertia::render('classroom/kelas/nilai-page', [
                 'kelas' => $this->presenter->kelas($kelas, $user),
-                'kolom' => $matriks['kolom'],
+                // Ujian tanpa soal (total poin 0) belum bisa dikerjakan, jadi belum tampil di Nilai Saya.
+                'kolom' => array_values(array_filter($matriks['kolom'], fn (array $k) => $k['maks'] > 0)),
                 'baris' => $saya ? [$saya] : [],
                 'saya' => true,
             ]);
@@ -259,7 +264,8 @@ class KelasController extends Controller
     }
 
     /**
-     * Ujian yang masih terbuka untuk siswa ini (belum dikerjakan atau masih berjalan), terdekat dulu.
+     * Ujian yang masih terbuka untuk siswa ini (belum dikerjakan atau masih berjalan), terdekat dulu. Ujian yang belum
+     * punya soal dilewati karena belum bisa dikerjakan.
      *
      * @return list<array{id: string, tipe: string, judul: ?string, batas: ?string}>
      */
@@ -272,6 +278,7 @@ class KelasController extends Controller
         $siswaId = $user->siswa->id;
 
         return Post::where('kelasId', $kelas->id)->where('tipe', 'UJIAN')
+            ->whereHas('soal')
             ->where(fn ($q) => $q->whereNull('selesaiAt')->orWhere('selesaiAt', '>=', now()))
             ->whereDoesntHave('percobaan', fn ($q) => $q->where('siswaId', $siswaId)->where('status', '!=', 'BERJALAN'))
             ->get()

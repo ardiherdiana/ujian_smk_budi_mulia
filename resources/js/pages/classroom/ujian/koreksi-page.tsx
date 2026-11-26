@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link, router } from "@inertiajs/react"
+import { Head, Link, router } from "@inertiajs/react"
 import { ArrowLeft } from "lucide-react"
 
 import type { KelasHeader } from "@/lib/classroom/types"
@@ -95,6 +95,7 @@ function SkorEssay({ soal }: { soal: SoalKoreksi }) {
 export function KoreksiPage({ kelas, post, siswa, percobaan, totalPoin, soal }: Props) {
   return (
     <div className="flex w-full flex-col gap-4">
+      <Head title={`Koreksi · ${siswa.nama} · ${post.judul ?? "Ujian"}`} />
       <Button variant="ghost" size="sm" className="w-fit" render={<Link href={`/post/${post.id}`} />}>
         <ArrowLeft /> {post.judul} · {kelas.rombel}
       </Button>

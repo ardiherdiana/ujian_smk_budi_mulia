@@ -1,3 +1,5 @@
+import { Head } from "@inertiajs/react"
+
 import type { KelasHeader as KelasHeaderData } from "@/lib/classroom/types"
 import { initials } from "@/lib/classroom/utils"
 import { KelasHeader } from "@/components/classroom/kelas-header"
@@ -27,6 +29,7 @@ function Orang({ nama, keterangan }: { nama: string; keterangan?: string | null 
 export function AnggotaPage({ kelas, guru, waliKelas, siswa }: Props) {
   return (
     <div className="flex flex-col gap-4">
+      <Head title={`Anggota · ${kelas.mapel} · ${kelas.rombel}`} />
       <KelasHeader kelas={kelas} />
 
       <div className="flex w-full flex-col gap-4">

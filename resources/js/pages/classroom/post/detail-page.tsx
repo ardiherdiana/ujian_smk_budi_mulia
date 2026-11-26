@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link } from "@inertiajs/react"
+import { Head, Link } from "@inertiajs/react"
 import { ArrowLeft, Pencil, Timer, Trash2, Users } from "lucide-react"
 
 import type { JendelaUjian, KelasHeader, KelasUjian, Post, Soal, StatusPercobaan } from "@/lib/classroom/types"
@@ -46,6 +46,7 @@ export function PostDetailPage(props: Props) {
 
   return (
     <div className="flex w-full flex-col gap-4">
+      <Head title={`${post.judul ?? LABEL_TIPE[post.tipe]} · ${kelas.rombel}`} />
       {confirmDialog}
 
       <Button variant="ghost" size="sm" className="w-fit" render={<Link href={`/kelas/${kelas.id}`} />}>

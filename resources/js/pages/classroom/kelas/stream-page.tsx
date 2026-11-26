@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react"
+import { Head, Link } from "@inertiajs/react"
 import { ClipboardCheck } from "lucide-react"
 
 import type { KelasHeader as KelasHeaderData, KelasTujuan, Mendatang, Post } from "@/lib/classroom/types"
@@ -20,6 +20,7 @@ interface Props {
 export function StreamPage({ kelas, posts, mendatang, tujuan }: Props) {
   return (
     <div className="flex flex-col gap-4">
+      <Head title={`${kelas.mapel} · ${kelas.rombel}`} />
       <KelasHeader kelas={kelas} />
 
       <div className="flex w-full flex-col gap-4 pt-2">
